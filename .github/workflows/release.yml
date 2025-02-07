@@ -1,0 +1,44 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1.3.1
+      
+    - name: Build x64 Release
+      run: |
+        msbuild /p:Configuration=Release /p:Platform="x64" /restore minihomo.sln
+        
+    - name: Build x86 Release
+      run: |
+        msbuild /p:Configuration=Release /p:Platform="x86" /restore minihomo.sln
+        
+    - name: Prepare Release Files
+      run: |
+        copy build\out\x64\Release\minihomo.exe minihomo-x64.exe
+        copy build\out\Win32\Release\minihomo.exe minihomo-x86.exe
+      
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          minihomo-x64.exe
+          minihomo-x86.exe
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
